@@ -1,30 +1,27 @@
 import 'dart:collection';
 
-import 'package:flutter/material.dart';
 import 'package:riverpod_sample/todo.dart';
+import 'package:riverpod_sample/todo_state.dart';
+import 'package:state_notifier/state_notifier.dart';
 
-class TodoViewModel extends ChangeNotifier {
-
-  List<Todo> _todoList = [];
-  UnmodifiableListView<Todo> get todoList => UnmodifiableListView(_todoList);
+class TodoViewModel extends StateNotifier<TodoState> {
+  TodoViewModel() : super(const TodoState());
 
   void createTodo(String title) {
-    final id = _todoList.length + 1;
-    _todoList = [...todoList, Todo(id, title)];
-    notifyListeners();
+    final id = state.todoList.length + 1;
+    final newList = [...state.todoList, Todo(id, title)];
+    state = state.copyWith(todoList: newList);
   }
 
   void updateTodo(int id, String title) {
-    todoList.asMap().forEach((key, value) {
-      if (value.id == id) {
-        _todoList[key].title = title;
-      }
-    });
-    notifyListeners();
+    final newList = state.todoList
+        .map((todo) => todo.id == id ? Todo(id, title) : todo)
+        .toList();
+    state = state.copyWith(todoList: newList);
   }
 
   void deleteTodo(int id) {
-    _todoList = _todoList.where((element) => element.id != id).toList();
-    notifyListeners();
+    final newList = state.todoList.where((todo) => todo.id != id).toList();
+    state = state.copyWith(todoList: newList);
   }
 }
