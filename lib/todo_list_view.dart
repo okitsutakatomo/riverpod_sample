@@ -24,33 +24,60 @@ class MyApp extends StatelessWidget {
 }
 
 class TodoList extends HookWidget {
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Todo'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _transitionToNextScreen(context),
-          ),
-        ],
-      ),
-      body: _buildList(),
-    );
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Todo'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => _transitionToNextScreen(context),
+            ),
+          ],
+        ),
+        body: _buildList(),
+      );
   }
+
+  // Widget build(BuildContext context) {
+  //   return Scaffold(
+  //     appBar: AppBar(
+  //       title: const Text('Todo'),
+  //       actions: [
+  //         IconButton(
+  //           icon: const Icon(Icons.add),
+  //           onPressed: () => _transitionToNextScreen(context),
+  //         ),
+  //       ],
+  //     ),
+  //     body: _buildList(),
+  //   );
+  // }
 
   Widget _buildList() {
     final todoState = useProvider(todoViewModelProvider);
+    
+    return todoState.when(
+      data: (value) {
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: value.todoList.length,
+          itemBuilder: (BuildContext context, int index) {
+            return _dismissible(value.todoList[index], context);
+          },
+        );
+      }, loading: () {
+        return Center(
+          child: CircularProgressIndicator(),
+        );
+      }, error: (error, stackTrace) {
+        return Text("error");
+    });
+
     // viewModelからtodoList取得/監視
-    final _todoList = todoState.todoList;
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _todoList.length,
-      itemBuilder: (BuildContext context, int index) {
-        return _dismissible(_todoList[index], context);
-      },
-    );
+    // final _todoList = todoState.data!.value.todoList;
   }
 
   Widget _dismissible(Todo todo, BuildContext context) {
@@ -66,7 +93,7 @@ class TodoList extends HookWidget {
       },
       onDismissed: (DismissDirection direction) {
         // viewModelのtodoList要素を削除
-        context.read(todoViewModelProvider).deleteTodo(todo.id);
+        context.read(todoViewModelProvider.notifier).deleteTodo(todo.id);
         // ToastMessageを表示
         Fluttertoast.showToast(
           msg: '${todo.title}を削除しました',
@@ -117,7 +144,7 @@ class TodoList extends HookWidget {
 
     if (result != null) {
       // ToastMessageを表示
-      await Fluttertoast.showToast(
+        await Fluttertoast.showToast(
         msg: result.toString(),
         backgroundColor: Colors.grey,
       );
@@ -147,4 +174,5 @@ class TodoList extends HookWidget {
         });
     return result;
   }
+
 }

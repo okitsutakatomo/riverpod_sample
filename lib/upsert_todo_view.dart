@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:loading_overlay/loading_overlay.dart';
 import 'package:riverpod_sample/main.dart';
 import 'package:riverpod_sample/todo.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -16,19 +18,25 @@ class UpsertTodoView extends StatelessWidget {
   }
 }
 
-class TodoForm extends StatefulWidget {
-  @override
-  _TodoFormState createState() => _TodoFormState();
-}
-
-class _TodoFormState extends State<TodoForm> {
+class TodoForm extends HookWidget {
   final _formKey = GlobalKey<FormState>();
   String _title = '';
 
   @override
   Widget build(BuildContext context) {
+    // state.when(data: (data) {
+    //   print(data.todoList.length);
+    // }, loading: () {
+
+    // }, error: (error, stackTrace){
+
+    // });
+
+    final isLoading = useProvider(todoViewModelProvider.select((value) => value.data == AsyncValue.loading().data));
+
     final Todo? todo = ModalRoute.of(context)!.settings.arguments as Todo?;
-    return Form(
+    return LoadingOverlay(
+      child: Form(
       key: _formKey,
       child: Container(
         padding: const EdgeInsets.all(64),
@@ -57,7 +65,7 @@ class _TodoFormState extends State<TodoForm> {
           ],
         ),
       ),
-    );
+    ), isLoading: isLoading);
   }
 
   void _submission(BuildContext context, Todo? todo) {
@@ -65,13 +73,16 @@ class _TodoFormState extends State<TodoForm> {
       _formKey.currentState!.save();
       if (todo != null) {
         // viewModelのtodoListを更新
-        context.read(todoViewModelProvider.notifier).updateTodo(todo.id, _title);
+        context.read(todoViewModelProvider.notifier).updateTodo(todo.id, _title).then((value) {
+          Navigator.pop(context, '$_titleを${todo == null ? '作成' : '更新'}しました');
+        });
       } else {
         // viewModelのtodoListを作成
-        context.read(todoViewModelProvider.notifier).createTodo(_title);
+        context.read(todoViewModelProvider.notifier).createTodo(_title).then((value) {
+          // 前の画面に戻る
+          Navigator.pop(context, '$_titleを${todo == null ? '作成' : '更新'}しました');
+        });
       }
-      // 前の画面に戻る
-      Navigator.pop(context, '$_titleを${todo == null ? '作成' : '更新'}しました');
     }
   }
 }

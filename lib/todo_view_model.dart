@@ -1,27 +1,39 @@
-import 'dart:collection';
-
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_sample/todo.dart';
 import 'package:riverpod_sample/todo_state.dart';
 import 'package:state_notifier/state_notifier.dart';
 
-class TodoViewModel extends StateNotifier<TodoState> {
-  TodoViewModel() : super(const TodoState());
+class TodoViewModel extends StateNotifier<AsyncValue<TodoState>> {
+  TodoViewModel() : super(const AsyncValue.data(const TodoState()));
 
-  void createTodo(String title) {
-    final id = state.todoList.length + 1;
-    final newList = [...state.todoList, Todo(id, title)];
-    state = state.copyWith(todoList: newList);
+  Future<void> createTodo(String title) async {
+    final beforeValue = state.data!.value.copyWith();
+    state = const AsyncValue.loading();
+    await new Future.delayed(new Duration(seconds: 3));
+    final id = beforeValue.todoList.length + 1;
+    final newList = [...beforeValue.todoList, Todo(id, title)];
+    state = AsyncValue.data(beforeValue.copyWith(todoList: newList));
   }
 
-  void updateTodo(int id, String title) {
-    final newList = state.todoList
+  Future<void> updateTodo(int id, String title) async {
+    final beforeValue = state.data!.value.copyWith();
+    state = const AsyncValue.loading();
+    await new Future.delayed(new Duration(seconds: 3));
+    final newList = beforeValue.todoList
         .map((todo) => todo.id == id ? Todo(id, title) : todo)
         .toList();
-    state = state.copyWith(todoList: newList);
+    state = AsyncValue.data(beforeValue.copyWith(todoList: newList));
   }
 
-  void deleteTodo(int id) {
-    final newList = state.todoList.where((todo) => todo.id != id).toList();
-    state = state.copyWith(todoList: newList);
+  Future<void> deleteTodo(int id) async {
+    await new Future.delayed(new Duration(seconds: 3));
+    final newList = state.data!.value.todoList.where((todo) => todo.id != id).toList();
+    state = AsyncValue.data(state.data!.value.copyWith(todoList: newList));
+  }
+
+  @override
+  void dispose() {
+    print("dispose");
+    super.dispose();
   }
 }
